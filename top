@@ -1,0 +1,113 @@
+module top_image_processing #(
+    parameter WIDTH  = 16,
+    parameter HEIGHT = 16
+)(
+    input clk,
+    input rst,
+    output [7:0] final_out,
+    output final_valid
+);
+
+// -----------------------------
+// BRAM wires
+// -----------------------------
+wire [13:0] bram_addr;
+wire [7:0]  bram_data;
+
+// -----------------------------
+// Line buffer output
+// -----------------------------
+wire [71:0] pixel_window;
+wire pixel_valid;
+
+// -----------------------------
+// Conv output
+// -----------------------------
+wire [7:0] conv_out;
+wire conv_valid;
+
+// -----------------------------
+// ReLU output
+// -----------------------------
+wire [7:0] relu_out;
+wire relu_valid;
+
+// -----------------------------
+// MaxPool output
+// -----------------------------
+wire [7:0] pool_out;
+wire pool_valid;
+
+// -----------------------------
+// BRAM INSTANCE
+// -----------------------------
+simple_bram #(
+    .WIDTH(WIDTH),
+    .HEIGHT(HEIGHT)
+) BRAM (
+    .clk(clk),
+    .we(1'b0),                // Read-only for now
+    .waddr(14'd0),
+    .wdata(8'd0),
+    .raddr(bram_addr),
+    .rdata(bram_data)
+);
+
+// -----------------------------
+// BRAM → LINE BUFFER
+// -----------------------------
+bram_to_linebuffer_fixed #(
+    .WIDTH(WIDTH),
+    .HEIGHT(HEIGHT)
+) BLK (
+    .i_clk(clk),
+    .i_rst(rst),
+    .bram_addr(bram_addr),
+    .bram_data(bram_data),
+    .o_pixel_data(pixel_window),
+    .o_pixel_valid(pixel_valid)
+);
+
+// -----------------------------
+// CONVOLUTION
+// -----------------------------
+conv CONV (
+    .i_clk(clk),
+    .i_pixel_data(pixel_window),
+    .i_pixel_data_valid(pixel_valid),
+    .o_convolved_data(conv_out),
+    .o_convolved_data_valid(conv_valid)
+);
+
+// -----------------------------
+// RELU
+// -----------------------------
+relu RELU (
+    .clk(clk),
+    .i_data(conv_out),
+    .i_valid(conv_valid),
+    .o_data(relu_out),
+    .o_valid(relu_valid)
+);
+
+// -----------------------------
+// MAX POOL
+// -----------------------------
+max_pool #(
+    .WIDTH(WIDTH)
+) POOL (
+    .clk(clk),
+    .rst(rst),
+    .i_data(relu_out),
+    .i_valid(relu_valid),
+    .o_data(pool_out),
+    .o_valid(pool_valid)
+);
+
+// -----------------------------
+// FINAL OUTPUT
+// -----------------------------
+assign final_out   = pool_out;
+assign final_valid = pool_valid;
+
+endmodule
