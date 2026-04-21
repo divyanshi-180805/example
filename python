@@ -1,0 +1,36 @@
+import os
+import shutil
+
+# === CHANGE THESE PATHS ===
+project_root = r"D:\your_path\SpatialFilter-master\ip"
+rtl_src = r"D:\your_path\SpatialFilter-master\rtl"
+tb_src = r"D:\your_path\SpatialFilter-master\sw"
+ip_src = r"D:\your_path\SpatialFilter-master\ip\outputBuffer"
+
+# === TARGET STRUCTURE ===
+base = os.path.join(project_root, "imageProcessing.srcs")
+
+rtl_dst = os.path.join(base, "sources_1", "new")
+sim_dst = os.path.join(base, "sim_1", "new")
+ip_dst = os.path.join(base, "sources_1", "ip", "outputBuffer")
+
+# === CREATE DIRECTORIES ===
+os.makedirs(rtl_dst, exist_ok=True)
+os.makedirs(sim_dst, exist_ok=True)
+os.makedirs(ip_dst, exist_ok=True)
+
+# === COPY RTL FILES ===
+for file in os.listdir(rtl_src):
+    if file.endswith(".v"):
+        shutil.copy(os.path.join(rtl_src, file), rtl_dst)
+
+# === COPY TESTBENCH ===
+for file in os.listdir(tb_src):
+    if file.endswith(".v"):
+        shutil.copy(os.path.join(tb_src, file), sim_dst)
+
+# === COPY IP FILES ===
+for file in os.listdir(ip_src):
+    shutil.copy(os.path.join(ip_src, file), ip_dst)
+
+print("Done. Vivado can stop complaining now.")
